@@ -82,11 +82,12 @@ if shouldInstallPHPExtension imagick; then
     installImageMagick
 fi
 
-install-php-extensions $(printf '%s' "$EXTENSIONS" | tr -- '-' ' ')
+install-php-extensions exif $(printf '%s' "$EXTENSIONS" | tr -- '-' ' ')
 
 /cleanup.sh
 
 # Check that everything works
+php --ri exif
 IFS='-'
 for EXTENSION in $EXTENSIONS; do
     php --ri $EXTENSION
