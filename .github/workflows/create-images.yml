@@ -1,0 +1,158 @@
+name: Create images
+
+on:
+  push:
+    paths:
+      - "docker/**"
+  pull_request:
+    paths:
+      - "docker/**"
+
+jobs:
+  inspect:
+    name: Inspect environment
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.check-publish.outputs.result }}
+    steps:
+      - name: Check if we have to publish the docker images
+        id: check-publish
+        run: |
+          PUBLISH_IMAGES=no
+          if [ "$GITHUB_REPOSITORY" != 'php-imagine/docker-builder' ]; then
+            echo "This is not the production repository: docker images won't be published"
+          elif [ "$GITHUB_EVENT_NAME" != 'push' ]; then
+            echo "This is a '$GITHUB_EVENT_NAME' event, not a 'push' event: docker images won't be published"
+          elif [ "$GITHUB_REF" != 'refs/heads/main' ]; then
+            echo "This is a push to '$GITHUB_REF', not to 'refs/heads/main' docker images won't be published"
+          else
+            echo 'Docker images will be published'
+            PUBLISH_IMAGES=yes
+          fi
+          echo "::set-output name=result::$PUBLISH_IMAGES"
+
+  build-base-images:
+    name: PHP ${{ matrix.php-version }}
+    runs-on: ubuntu-latest
+    needs:
+      - inspect
+    strategy:
+      matrix:
+        php-version:
+          - "5.5"
+          - "5.6"
+          - "7.0"
+          - "7.1"
+          - "7.2"
+          - "7.3"
+          - "7.4"
+          - "8.0"
+          - "8.1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build image
+        run: |
+          PHP_VERSION_DOCKERSUFFIX=''
+          if [ "${{ matrix.php-version }}" = '8.1' ]; then
+            PHP_VERSION_DOCKERSUFFIX='-rc'
+          fi
+          docker build \
+            --build-arg "PHP_VERSION=${{ matrix.php-version }}" \
+            --build-arg "PHP_VERSION_DOCKERSUFFIX=$PHP_VERSION_DOCKERSUFFIX" \
+            --tag "ghcr.io/php-imagine/test:${{ matrix.php-version }}-base" \
+            --force-rm --rm \
+            --file ./docker/Dockerfile.base \
+            ./docker
+      - name: Save image
+        if: needs.inspect.outputs.publish == 'no'
+        run: |
+          docker save "ghcr.io/php-imagine/test:${{ matrix.php-version }}-base" | gzip >"/tmp/base-image-${{ matrix.php-version }}.tgz"
+      - name: Upload image
+        if: needs.inspect.outputs.publish == 'no'
+        uses: actions/upload-artifact@v2
+        with:
+          name: base-image-${{ matrix.php-version }}
+          path: /tmp/base-image-${{ matrix.php-version }}.tgz
+      - name: Login to the container registry
+        if: needs.inspect.outputs.publish == 'yes'
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload image to the container registry
+        if: needs.inspect.outputs.publish == 'yes'
+        run: docker push "ghcr.io/php-imagine/test:${{ matrix.php-version }}-base"
+
+  build-final-images:
+    name: PHP ${{ matrix.config.php-version }} - ${{ matrix.extensions }}
+    runs-on: ubuntu-latest
+    needs:
+      - inspect
+      - build-base-images
+    strategy:
+      matrix:
+        config:
+          - php-version: "5.5"
+            graphicsmagic-version: "1.3.23"
+            imagemagick-version: "6.8.9-10"
+          - php-version: "5.6"
+            graphicsmagic-version: "1.3.36"
+            imagemagick-version: "7.1.0-8"
+          - php-version: "7.0"
+            graphicsmagic-version: "1.3.36"
+            imagemagick-version: "7.1.0-8"
+          - php-version: "7.1"
+            graphicsmagic-version: "1.3.36"
+            imagemagick-version: "7.1.0-8"
+          - php-version: "7.2"
+            graphicsmagic-version: "1.3.36"
+            imagemagick-version: "7.1.0-8"
+          - php-version: "7.3"
+            graphicsmagic-version: "1.3.36"
+            imagemagick-version: "7.1.0-8"
+          - php-version: "7.4"
+            graphicsmagic-version: "1.3.36"
+            imagemagick-version: "7.1.0-8"
+          - php-version: "8.0"
+            graphicsmagic-version: "1.3.36"
+            imagemagick-version: "7.1.0-8"
+          - php-version: "8.1"
+            graphicsmagic-version: "1.3.36"
+            imagemagick-version: "7.1.0-8"
+        extensions:
+          - "gd-gmagick"
+          - "gd-imagick"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download base image
+        if: needs.inspect.outputs.publish == 'no'
+        uses: actions/download-artifact@v2
+        with:
+          name: base-image-${{ matrix.config.php-version }}
+          path: /tmp/
+      - name: Load base image
+        if: needs.inspect.outputs.publish == 'no'
+        run: docker load --input /tmp/base-image-${{ matrix.config.php-version }}.tgz
+      - name: Build image
+        run: |
+          docker build \
+            --build-arg "PHP_VERSION=${{ matrix.config.php-version }}" \
+            --build-arg "GRAPHICSMAGIC_VERSION=${{ matrix.config.graphicsmagic-version }}" \
+            --build-arg "IMAGEMAGICK_VERSION=${{ matrix.config.imagemagick-version }}" \
+            --build-arg "EXTENSIONS=${{ matrix.extensions }}" \
+            --tag "ghcr.io/php-imagine/test:${{ matrix.config.php-version }}-${{ matrix.extensions }}" \
+            --file ./docker/Dockerfile.build \
+            ./docker
+      - name: Login to the container registry
+        if: needs.inspect.outputs.publish == 'yes'
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload image to the container registry
+        if: needs.inspect.outputs.publish == 'yes'
+        run: docker push "ghcr.io/php-imagine/test:${{ matrix.config.php-version }}-${{ matrix.extensions }}"

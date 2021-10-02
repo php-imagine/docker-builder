@@ -1,0 +1,24 @@
+# The Major.Minor version of PHP
+ARG PHP_VERSION
+
+# The suffix of the Docker image to be appended to PHP_VERSION
+# Example: "-rc" for php:8.1-rc-cli
+ARG PHP_VERSION_DOCKERSUFFIX=""
+
+FROM php:${PHP_VERSION}${PHP_VERSION_DOCKERSUFFIX}-cli
+
+# The version of libaom to be installed
+# https://aomedia.googlesource.com/aom/+refs
+ARG LIBAOM_VERSION=3.1.2
+
+# The version of libdav1d to be installed
+# https://code.videolan.org/videolan/dav1d/-/tags
+ARG LIBDAV1D_VERSION=0.9.2
+
+# The version of libavif to be installed
+# https://github.com/AOMediaCodec/libavif/tags
+ARG LIBAVIF_VERSION=0.9.2
+
+COPY setup-base.sh /
+COPY common.sh /
+RUN /setup-base.sh --cleanup
