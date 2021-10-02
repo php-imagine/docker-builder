@@ -64,6 +64,18 @@ installLibavif() {
 	ldconfig
 }
 
+buildGit() {
+    printf 'Downloading git v%s... ' "$GIT_VERSION"
+    buildGit_dir="$(mktemp -d)"
+    curl -ksSLf -o - https://codeload.github.com/git/git/tar.gz/refs/tags/v$GIT_VERSION | tar xzm -C "$buildGit_dir"
+    printf 'done.\n'
+    cd "$buildGit_dir/git-$GIT_VERSION"
+    make -j$(nproc) prefix=/usr/local all
+    make prefix=/usr/local install
+    cd - >/dev/null
+    rm -rf "$buildGit_dir"
+}
+
 if grep -Eq 'PRETTY_NAME.*jessie' /etc/os-release; then
     # https://bugs.launchpad.net/ubuntu/+source/apt/+bug/1332440
     ulimit -n 10000
@@ -90,7 +102,6 @@ IMAGINE_COMPILETIME_PACKAGES="
     libvpx-dev
 "
 IMAGINE_RUNTIME_PACKAGES="
-    git
     ^libjpeg[0-9]*-turbo$
     ^libtiff[0-9]*$
     ^libwebp[0-9]*$
@@ -110,9 +121,22 @@ if [ -n "$(apt-cache search --names-only '^libzstd-dev$')" ]; then
     IMAGINE_COMPILETIME_PACKAGES="$IMAGINE_COMPILETIME_PACKAGES libzstd-dev"
 fi
 
-apt-get -q update
-apt-get -q upgrade -y
-apt-get -q install -y --no-install-recommends $IMAGINE_COMPILETIME_PACKAGES $IMAGINE_RUNTIME_PACKAGES
+apt-get update -qq
+apt-get upgrade -qqy
+
+if isAptPackageAtLeastVersion git 2.18.0; then
+    IMAGINE_RUNTIME_PACKAGES="$IMAGINE_RUNTIME_PACKAGES git";
+    shouldBuildGit=no
+else
+    IMAGINE_COMPILETIME_PACKAGES="$IMAGINE_COMPILETIME_PACKAGES libssl-dev libcurl4-gnutls-dev ^libexpat[0-9]*-dev$"
+    shouldBuildGit=yes
+fi
+
+apt-get install -qqy --no-install-recommends $IMAGINE_COMPILETIME_PACKAGES $IMAGINE_RUNTIME_PACKAGES
+
+if [ $shouldBuildGit = yes ]; then
+    buildGit
+fi
 
 if isCMakeAtLeastVersion '3.6'; then
     installLibaom

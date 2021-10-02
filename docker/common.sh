@@ -46,6 +46,17 @@ isGccAtLeastVersion() {
     return 1
 }
 
+isAptPackageAtLeastVersion() {
+    if isAtLeastVersion "$(getAptPackageAvailableVersion "$1")" "$2"; then
+        return 0
+    fi
+    return 1
+}
+
+getAptPackageAvailableVersion() {
+    apt-cache show "^$1$" | grep -E '^Version: ' | head -n1 | sed -E 's/^.*([0-9]+\.[0-9]+\.[0-9]+).*$/\1/'
+}
+
 markPackagesAsInstalledByRegex() {
     markPackagesAsInstalledByRegex_names=''
     IFS='
