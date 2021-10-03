@@ -3,9 +3,11 @@ name: Create images
 on:
   push:
     paths:
+      - .github/workflows/create-images.yml
       - "docker/**"
   pull_request:
     paths:
+      - .github/workflows/create-images.yml
       - "docker/**"
 
 jobs:
