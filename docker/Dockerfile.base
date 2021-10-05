@@ -7,22 +7,8 @@ ARG PHP_VERSION_DOCKERSUFFIX=""
 
 FROM php:${PHP_VERSION}${PHP_VERSION_DOCKERSUFFIX}-cli
 
-# The version of libaom to be installed
-# https://aomedia.googlesource.com/aom/+refs
-ARG LIBAOM_VERSION=3.1.2
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-# The version of libdav1d to be installed
-# https://code.videolan.org/videolan/dav1d/-/tags
-ARG LIBDAV1D_VERSION=0.9.2
+COPY utilities.sh /
 
-# The version of libavif to be installed
-# https://github.com/AOMediaCodec/libavif/tags
-ARG LIBAVIF_VERSION=0.9.2
-
-# The version of git to be installed if the default one is too old
-# https://github.com/git/git/releases
-ARG GIT_VERSION=2.33.0
-
-COPY setup-base.sh /
-COPY common.sh /
-RUN /setup-base.sh --cleanup
+COPY installer.sh /
