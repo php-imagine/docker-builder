@@ -38,6 +38,9 @@ stringInList() {
 #   0: true
 #   1: false
 isAtLeastVersion() {
+    if [ -z "$1" ]; then
+        return 1
+    fi
     isAtLeastVersion_actual=$(printf '%s' "$1" | cut -d. -f1)
     isAtLeastVersion_wanted=$(printf '%s' "$2" | cut -d. -f1)
     if [ $isAtLeastVersion_actual -lt $isAtLeastVersion_wanted ]; then
@@ -136,9 +139,14 @@ isGccAtLeastVersion() {
 #   $1: the package name (regex, without leading '^' or trailing '$')
 #
 # Output:
-#   the version (in format <mayor>.<minor>.<patch>)
+#   the version (in format <mayor>.<minor>.<patch> or <mayor>.<minor>)
+#   outputs nothing if the package can't be found
 getAptPackageAvailableVersion() {
-    apt-cache show "^$1$" | grep -E '^Version: ' | head -n1 | sed -E 's/^.*[^0-9]([0-9]+\.[0-9]+\.[0-9]+).*$/\1/'
+    getAptPackageAvailableVersion_found="$(apt-cache show "^$1$" 2>/dev/null || true)"
+    if [ -z "$getAptPackageAvailableVersion_found" ]; then
+        return
+    fi
+    printf '%s' "$getAptPackageAvailableVersion_found" | grep -E '^Version: ' | head -n1 | sed -E 's/^.*[^0-9\.]([0-9]+\.[0-9]+(\.[0-9]+)?).*$/\1/'
 }
 
 # Check if the version of an apt package is at least the provided one.
