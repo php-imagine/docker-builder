@@ -31,14 +31,18 @@ installGit() {
     git version --build-options
 }
 
-# Try to install libaom.
+# Install libaom.
 #
 # Arguments:
 #   $1: the version to be installed
+#
+# Return:
+#   0 in case of success
+#   1 in case of errors
 installLibaom() {
-    if ! isCMakeAtLeastVersion '3.6'; then
-        echo 'libaom not installed because cmake is too old' >&2
-        return
+    if ! isAvifSupported 2>/dev/null && ! isHeicSupported 2>/dev/null; then
+        echo 'libaom not installed because the system does not support neither AVIF nor HEIC' >&2
+        return 1
     fi
     installAptPackages '' 'cmake ninja-build nasm'
     printf 'Downloading libaom v%s... ' "$1"
@@ -54,16 +58,21 @@ installLibaom() {
 	ldconfig
     markPackagesAsInstalledByRegex '^(lib)?aom([0-9]|-dev)'
     pkg-config --list-all | grep -E '^(lib)?aom\s'
+    return 0
 }
 
-# Try to install libdav1d.
+# Install libdav1d.
 #
 # Arguments:
 #   $1: the version to be installed
+#
+# Return:
+#   0 in case of success
+#   1 in case of errors
 installLibdav1d() {
-    if ! isMesonAtLeastVersion '0.44'; then
-        echo 'libdav1d not installed because meson is too old' >&2
-        return
+    if ! isAvifSupported 2>/dev/null; then
+        echo 'libdav1d not installed because the system does not support AVIF' >&2
+        return 1
     fi
     installAptPackages '' 'meson ninja-build nasm'
     printf 'Downloading libdav1d v%s... ' "$1"
@@ -82,16 +91,21 @@ installLibdav1d() {
 	ldconfig
     markPackagesAsInstalledByRegex '^(lib)?dav1d([0-9]|-dev)'
     pkg-config --list-all | grep -E '^(lib)?dav1d\s'
+    return 0
 }
 
-# Try to install libyuv.
+# Install libyuv.
 #
 # Arguments:
 #   $1: the version to be installed
+#
+# Return:
+#   0 in case of success
+#   1 in case of errors
 installLibyuv() {
-    if ! isGccAtLeastVersion '4.9.3'; then
-        echo 'libyuv not installed because gcc is too old' >&2
-        return
+    if ! isAvifSupported 2>/dev/null && ! isHeicSupported 2>/dev/null; then
+        echo 'libyuv not installed because the system does not support neither AVIF nor HEIC' >&2
+        return 1
     fi
     installAptPackages '^libjpeg[0-9]*-turbo' 'cmake ^libjpeg[0-9]*-turbo-dev'
     printf 'Downloading libyuv... '
@@ -127,20 +141,33 @@ EOT
 	ldconfig
     markPackagesAsInstalledByRegex '^(lib)?yuv([0-9]|-dev)'
     pkg-config --list-all | grep -E '^(lib)?yuv\s'
+    return 0
 }
 
-# Try to install libavif.
+# Install libavif.
 #
 # Arguments:
 #   $1: the version to be installed
+#
+# Return:
+#   0 in case of success
+#   1 in case of errors
 installLibavif() {
+    if ! isAvifSupported 2>/dev/null; then
+        echo 'libavif not installed because the system does not support AVIF' >&2
+        return 1
+    fi
     if ! pkg-config --list-all | grep -E '^(lib)?aom\s' >/dev/null; then
         echo 'libavif not installed because libaom is not installed' >&2
-        return
+        return 1
     fi
-    if ! isCMakeAtLeastVersion '3.5'; then
-        echo 'libavif not installed because cmake is too old' >&2
-        return
+    if ! pkg-config --list-all | grep -E '^(lib)?dav1d\s' >/dev/null; then
+        echo 'libavif not installed because libdav1d is not installed' >&2
+        return 1
+    fi
+    if ! pkg-config --list-all | grep -E '^(lib)?yuv\s' >/dev/null; then
+        echo 'libavif not installed because libyuv is not installed' >&2
+        return 1
     fi
     installAptPackages '' 'cmake'
     printf 'Downloading libavif v%s... ' "$1"
@@ -156,6 +183,7 @@ installLibavif() {
 	ldconfig
     markPackagesAsInstalledByRegex '^(lib)?avif([0-9]|-dev)'
     pkg-config --list-all | grep -E '^(lib)?avif\s'
+    return 0
 }
 
 # Install libde265.
@@ -163,12 +191,17 @@ installLibavif() {
 # Arguments:
 #   $1: the version to be installed
 #
+# Return:
+#   0 in case of success
+#   1 in case of errors
+#
 # @todo:
 # configure: WARNING: Did not find libvideogfx or libsdl, video output of dec265 will be disabled.
 # configure: WARNING: Did not find libvideogfx or libswscale, compilation of sherlock265 will be disabled.
 installLibde265() {
-    if ! isHeicSupported; then
-        return
+    if ! isHeicSupported 2>/dev/null; then
+        echo 'libde265 not installed because the system does not support HEIC' >&2
+        return 1
     fi
     installAptPackages '' 'automake libtool'
     printf 'Downloading libde265 v%s... ' "$1"
@@ -184,19 +217,29 @@ installLibde265() {
     ldconfig
     markPackagesAsInstalledByRegex '^(lib)?de265'
     pkg-config --list-all | grep -E '^(lib)?de265\s'
+    return 0
 }
 
 # Install libheif.
 #
 # Arguments:
 #   $1: the version to be installed
+#
+# Return:
+#   0 in case of success
+#   1 in case of errors
 installLibheif() {
-    if ! isHeicSupported; then
-        return
+    if ! isHeicSupported 2>/dev/null; then
+        echo 'libheif not installed because the system does not support HEIC' >&2
+        return 1
+    fi
+    if ! pkg-config --list-all | grep -E '^(lib)?aom\s' >/dev/null; then
+        echo 'libheif not installed because libaom is not installed' >&2
+        return 1
     fi
     if ! pkg-config --list-all | grep -E '^(lib)?de265\s' >/dev/null; then
         echo 'libheif not installed because libde265 is not installed' >&2
-        return
+        return 1
     fi
     installAptPackages '^libjpeg[0-9]*-turbo ^libpng[0-9\-]*$ ^libx265(-[0-9\.\-]+)?$' 'automake libtool ^libjpeg[0-9]*-turbo-dev libpng-dev libx265-dev'
     printf 'Downloading libheif v%s... ' "$1"
@@ -212,20 +255,56 @@ installLibheif() {
     ldconfig
     markPackagesAsInstalledByRegex '^libheif.*'
     pkg-config --list-all | grep -E '^(lib)?heif\s'
+    return 0
 }
 
-# Check if HEIC format is supported in this instance
+# Check if AVIF format is supported in this environment
 #
-# Output:
-#   nothing if HEIC is supported
-#   the reason why HEIC is not supported (to stderr) otherwise
+# Output (stderr):
+#   the reason (if any) why it's not supported
+#
+# Return:
+#   0: true
+#   1: false
+isAvifSupported() {
+    if ! isCMakeAtLeastVersion '3.6'; then
+        echo 'AVIF support not provided since compiling libaom requires a more recent cmake version' >&2
+        return 1
+    fi
+    if ! isMesonAtLeastVersion '0.44'; then
+        echo 'AVIF support not provided since compiling libdav1d requires a more recent meson version' >&2
+        return 1
+    fi
+    if ! isGccAtLeastVersion '4.9.3'; then
+        echo 'AVIF support not provided since compiling libyuv requires a more recent gcc version' >&2
+        return 1
+    fi
+    if ! isCMakeAtLeastVersion '3.5'; then
+        echo 'AVIF support not provided since compiling libavif requires a more recent cmake version' >&2
+        return 1
+    fi
+    return 0
+}
+
+# Check if HEIC format is supported in this environment
+#
+# Output (stderr):
+#   the reason (if any) why it's not supported
 #
 # Return:
 #   0: true
 #   1: false
 isHeicSupported() {
-    if [ -z getAptPackageAvailableVersion 'libx265(-[0-9\.\-]+)?$' ]; then
-        echo 'libx265 is not available'
+    if ! isCMakeAtLeastVersion '3.6'; then
+        echo 'HEIC support not provided since compiling libaom requires a more recent cmake version' >&2
+        return 1
+    fi
+    if [ -z "$(getAptPackageAvailableVersion 'libx265(-[0-9\.\-]+)?$')" ]; then
+        echo 'HEIC support not provided since libx265 is not available'
+        return 1
+    fi
+    if ! isGccAtLeastVersion '4.9.3'; then
+        echo 'HEIC support not provided since compiling libyuv requires a more recent gcc version' >&2
         return 1
     fi
     return 0
@@ -295,6 +374,16 @@ fi
 case "$1" in
     git)
         installGit "$2"
+        ;;
+    support-avif)
+        if ! isAvifSupported; then
+            return 1
+        fi
+        ;;
+    support-heic)
+        if ! isHeicSupported; then
+            return 1
+        fi
         ;;
     libaom)
         installLibaom "$2"
