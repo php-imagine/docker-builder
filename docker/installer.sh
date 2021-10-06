@@ -330,7 +330,7 @@ installGraphicsmagick() {
     curl -ksSLf -o - http://ftp.icm.edu.pl/pub/unix/graphics/GraphicsMagick/${1%.*}/GraphicsMagick-$1.tar.gz | tar xzm -C "$installGraphicsmagick_dir"
     printf 'done.\n'
     cd "$installGraphicsmagick_dir/GraphicsMagick-$1"
-    CFLAGS='-Wno-misleading-indentation -Wno-unused-const-variable -Wno-pointer-compare -Wno-tautological-compare' ./configure --enable-shared
+    CFLAGS='-Wno-misleading-indentation -Wno-unused-const-variable -Wno-pointer-compare -Wno-tautological-compare' ./configure --disable-static --enable-shared
     make V=0 -j$(nproc) install
     cd - >/dev/null
     rm -rf "$installGraphicsmagick_dir"
@@ -358,7 +358,7 @@ installImagemagick() {
     curl -ksSLf -o - https://www.imagemagick.org/download/releases/ImageMagick-$1.tar.xz | tar xJm -C "$installImagemagick_dir"
     printf 'done.\n'
     cd "$installImagemagick_dir/ImageMagick-$1"
-    ./configure --disable-docs
+    ./configure --disable-docs --disable-static --enable-shared
     make V=0 -j$(nproc) install
     cd - >/dev/null
     rm -rf "$installImagemagick_dir"
