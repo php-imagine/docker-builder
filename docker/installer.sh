@@ -100,13 +100,33 @@ installLibyuv() {
     printf 'done.\n'
 	mkdir "$installLibyuv_dir/build"
 	cd "$installLibyuv_dir/build"
+    printf '\nconfigure_file(imaginepatch-libyuv.pc.in imaginepatch-libyuv.pc @ONLY)\n' >>../CMakeLists.txt
+    cat <<'EOT' >../imaginepatch-libyuv.pc.in
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${prefix}/lib
+
+Name: @CPACK_PACKAGE_NAME@
+Description: @CPACK_PACKAGE_DESCRIPTION@
+Version: @CPACK_PACKAGE_VERSION@
+Requires: @pc_req_public@
+Requires.private: @pc_req_private@
+Cflags: -I${includedir}
+Libs: -L${libdir} -llibyuv
+EOT
 	cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -B. ..
 	make -j$(nproc) install
+    ldconfig
+    if ! pkg-config --exists libyuv && ! pkg-config --exists yuv; then
+        cp imaginepatch-libyuv.pc /usr/lib/pkgconfig/libyuv.pc
+        ldconfig
+    fi
 	cd - >/dev/null
     rm -rf "$installLibyuv_dir"
 	ldconfig
     markPackagesAsInstalledByRegex '^(lib)?yuv([0-9]|-dev)'
-    #pkg-config --list-all | grep -E '^(lib)?yuv\s'
+    pkg-config --list-all | grep -E '^(lib)?yuv\s'
 }
 
 # Try to install libavif.
