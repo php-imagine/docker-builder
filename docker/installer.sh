@@ -262,7 +262,7 @@ installImagemagick() {
 
 if grep -Eq 'PRETTY_NAME.*jessie' /etc/os-release; then
     # https://bugs.launchpad.net/ubuntu/+source/apt/+bug/1332440
-    ulimit -n 10000
+    ulimit -n 10000 2>/dev/null || true
 fi
 
 case "$1" in
