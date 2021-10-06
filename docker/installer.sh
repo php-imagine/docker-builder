@@ -167,6 +167,9 @@ installLibavif() {
 # configure: WARNING: Did not find libvideogfx or libsdl, video output of dec265 will be disabled.
 # configure: WARNING: Did not find libvideogfx or libswscale, compilation of sherlock265 will be disabled.
 installLibde265() {
+    if ! isHeicSupported; then
+        return
+    fi
     installAptPackages '' 'automake libtool'
     printf 'Downloading libde265 v%s... ' "$1"
     installLibde265_dir="$(mktemp -d)"
@@ -188,7 +191,14 @@ installLibde265() {
 # Arguments:
 #   $1: the version to be installed
 installLibheif() {
-    installAptPackages '^libjpeg[0-9]*-turbo ^libpng[0-9\-]*$' 'automake libtool ^libjpeg[0-9]*-turbo-dev libpng-dev'
+    if ! isHeicSupported; then
+        return
+    fi
+    if ! pkg-config --list-all | grep -E '^(lib)?de265\s' >/dev/null; then
+        echo 'libheif not installed because libde265 is not installed' >&2
+        return
+    fi
+    installAptPackages '^libjpeg[0-9]*-turbo ^libpng[0-9\-]*$ ^libx265(-[0-9\.\-]+)?$' 'automake libtool ^libjpeg[0-9]*-turbo-dev libpng-dev libx265-dev'
     printf 'Downloading libheif v%s... ' "$1"
     installLibheif_dir="$(mktemp -d)"
     curl -ksSLf -o - https://github.com/strukturag/libheif/releases/download/v$1/libheif-$1.tar.gz | tar xzm -C "$installLibheif_dir"
@@ -202,6 +212,23 @@ installLibheif() {
     ldconfig
     markPackagesAsInstalledByRegex '^libheif.*'
     pkg-config --list-all | grep -E '^(lib)?heif\s'
+}
+
+# Check if HEIC format is supported in this instance
+#
+# Output:
+#   nothing if HEIC is supported
+#   the reason why HEIC is not supported (to stderr) otherwise
+#
+# Return:
+#   0: true
+#   1: false
+isHeicSupported() {
+    if [ -z getAptPackageAvailableVersion 'libx265(-[0-9\.\-]+)?$' ]; then
+        echo 'libx265 is not available'
+        return 1
+    fi
+    return 0
 }
 
 # Install GraphicsMagick.
