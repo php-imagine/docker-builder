@@ -94,6 +94,9 @@ jobs:
         name: Update apt packages
         run: docker exec -t imagine-${{ matrix.php-version }} apt-get upgrade -qy
       -
+        name: Fix Let's Encrypt CA certificate
+        run: docker exec -t -e IPE_KEEP_SYSPKG_CACHE=1 imagine-${{ matrix.php-version }} install-php-extensions @fix_letsencrypt
+      -
         name: Inspect container environment
         id: inspect
         run: |
