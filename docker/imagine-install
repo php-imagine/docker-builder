@@ -325,9 +325,25 @@ installGraphicsmagick() {
     installAptPackages \
         "^libz[0-9\-]*$ ^libjpeg[0-9]*-turbo ^libpng[0-9\-]*$ ^libjbig[0-9\-]*$ ^libtiff[0-9]*$ ^libwebp[0-9]*$ ^libwebpdemux[0-9]*$ ^libwebpmux[0-9]*$ libxml2 ^liblcms2[0-9\-]*$ ^libfreetype[0-9]*$ $installGraphicsmagick_zstd" \
         "libbz2-dev ^libjpeg[0-9]*-turbo-dev libpng-dev libjbig-dev libtiff-dev libwebp-dev libxml2-dev liblcms2-dev ^libfreetype[0-9]*-dev$ $installGraphicsmagick_zstdDev"
-    printf 'Downloading GraphicsMagick v%s... ' "$1"
+    installGraphicsmagick_url="http://ftp.icm.edu.pl/pub/unix/graphics/GraphicsMagick/${1%.*}/GraphicsMagick-$1.tar.gz"
+    if ! curl -ksLfI -o /dev/null $installGraphicsmagick_url; then
+        installGraphicsmagick_url="ftp://ftp.icm.edu.pl/pub/unix/graphics/GraphicsMagick/${1%.*}/GraphicsMagick-$1.tar.gz"
+        if ! curl -ksLfI -o /dev/null $installGraphicsmagick_url; then
+            installGraphicsmagick_url="http://78.108.103.11/MIRROR/ftp/GraphicsMagick/${1%.*}/GraphicsMagick-$1.tar.gz"
+            if ! curl -ksLfI -o /dev/null $installGraphicsmagick_url; then
+                installGraphicsmagick_url="http://downloads.sourceforge.net/project/graphicsmagick/graphicsmagick/$1/GraphicsMagick-$1.tar.gz"
+                if ! curl -ksLfI -o /dev/null $installGraphicsmagick_url; then
+                    installGraphicsmagick_url="http://downloads.sourceforge.net/project/graphicsmagick/graphicsmagick-history/${1%.*}/GraphicsMagick-$1.tar.gz"
+                    if ! curl -ksLfI -o /dev/null $installGraphicsmagick_url; then
+                        installGraphicsmagick_url="ftp://ftp.graphicsmagick.org/pub/GraphicsMagick/${1%.*}/GraphicsMagick-$1.tar.gz"
+                    fi
+                fi
+            fi
+        fi
+    fi
+    printf 'Downloading GraphicsMagick v%s from %s... ' "$1" "$installGraphicsmagick_url"
     installGraphicsmagick_dir="$(mktemp -d)"
-    curl -ksSLf -o - http://ftp.icm.edu.pl/pub/unix/graphics/GraphicsMagick/${1%.*}/GraphicsMagick-$1.tar.gz | tar xzm -C "$installGraphicsmagick_dir"
+    curl -ksSLf -o - "$installGraphicsmagick_url" | tar xzm -C "$installGraphicsmagick_dir"
     printf 'done.\n'
     cd "$installGraphicsmagick_dir/GraphicsMagick-$1"
     CFLAGS='-Wno-misleading-indentation -Wno-unused-const-variable -Wno-pointer-compare -Wno-tautological-compare' ./configure --disable-static --enable-shared
