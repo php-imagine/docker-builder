@@ -3,7 +3,7 @@
 set -o nounset
 set -o errexit
 
-. "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)/utilities.sh"
+. "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)/imagine-utilities"
 
 # Install git.
 # If it's too old to be used in GitHub Actions we'll build it.
@@ -412,13 +412,7 @@ case "$1" in
     cleanup)
         uninstallAptDevPackages
         rm -rf /var/lib/apt/lists/*
-        ;;
-    final-cleanup)
-        uninstallAptDevPackages
-        rm -rf /var/lib/apt/lists/*
         rm -rf /tmp/*
-        unlink "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)/utilities.sh"
-        unlink "$0"
         ;;
     *)
         printf 'Unrecognized command: "%s"\n' "$1">&2

@@ -9,6 +9,6 @@ FROM php:${PHP_VERSION}${PHP_VERSION_DOCKERSUFFIX}-cli
 
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-COPY utilities.sh /
+COPY imagine-utilities /usr/local/bin/
 
-COPY installer.sh /
+COPY imagine-install /usr/local/bin/

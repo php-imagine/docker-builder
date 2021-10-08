@@ -97,13 +97,13 @@ jobs:
         name: Inspect container environment
         id: inspect
         run: |
-          if docker exec -t imagine-${{ matrix.php-version }} /installer.sh support-avif; then
+          if docker exec -t imagine-${{ matrix.php-version }} imagine-install support-avif; then
             echo 'AVIF is supported'
             AVIF_SUPPORT=yes
           else
             AVIF_SUPPORT=no
           fi
-          if docker exec -t imagine-${{ matrix.php-version }} /installer.sh support-heic; then
+          if docker exec -t imagine-${{ matrix.php-version }} imagine-install support-heic; then
             echo 'HEIC is supported'
             HEIC_SUPPORT=yes
           else
@@ -113,31 +113,31 @@ jobs:
           echo "::set-output name=heic-support::$HEIC_SUPPORT"
       -
         name: Install git
-        run: docker exec -t imagine-${{ matrix.php-version }} /installer.sh git $GIT_VERSION
+        run: docker exec -t imagine-${{ matrix.php-version }} imagine-install git $GIT_VERSION
       -
         name: Install libaom ${{ env.LIBAOM_VERSION }}
         if: ${{ steps.inspect.outputs.avif-support == 'yes' || steps.inspect.outputs.heic-support == 'yes' }}
-        run: docker exec -t imagine-${{ matrix.php-version }} /installer.sh libaom $LIBAOM_VERSION
+        run: docker exec -t imagine-${{ matrix.php-version }} imagine-install libaom $LIBAOM_VERSION
       -
         name: Install libdav1d ${{ env.LIBDAV1D_VERSION }}
         if: ${{ steps.inspect.outputs.avif-support == 'yes' }}
-        run: docker exec -t imagine-${{ matrix.php-version }} /installer.sh libdav1d $LIBDAV1D_VERSION
+        run: docker exec -t imagine-${{ matrix.php-version }} imagine-install libdav1d $LIBDAV1D_VERSION
       -
         name: Install libyuv
         if: ${{ steps.inspect.outputs.avif-support == 'yes' || steps.inspect.outputs.heic-support == 'yes' }}
-        run: docker exec -t imagine-${{ matrix.php-version }} /installer.sh libyuv
+        run: docker exec -t imagine-${{ matrix.php-version }} imagine-install libyuv
       -
         name: Install libavif ${{ env.LIBAVIF_VERSION }}
         if: ${{ steps.inspect.outputs.avif-support == 'yes' }}
-        run: docker exec -t imagine-${{ matrix.php-version }} /installer.sh libavif $LIBAVIF_VERSION
+        run: docker exec -t imagine-${{ matrix.php-version }} imagine-install libavif $LIBAVIF_VERSION
       -
         name: Install libde265 ${{ env.LIBDE265_VERSION }}
         if: ${{ steps.inspect.outputs.heic-support == 'yes' }}
-        run: docker exec -t imagine-${{ matrix.php-version }} /installer.sh libde265 $LIBDE265_VERSION
+        run: docker exec -t imagine-${{ matrix.php-version }} imagine-install libde265 $LIBDE265_VERSION
       -
         name: Install libheif ${{ env.LIBHEIF_VERSION }}
         if: ${{ steps.inspect.outputs.heic-support == 'yes' }}
-        run: docker exec -t imagine-${{ matrix.php-version }} /installer.sh libheif $LIBHEIF_VERSION
+        run: docker exec -t imagine-${{ matrix.php-version }} imagine-install libheif $LIBHEIF_VERSION
       -
         name: Install Composer
         run: docker exec -t -e IPE_KEEP_SYSPKG_CACHE=1 imagine-${{ matrix.php-version }} install-php-extensions @composer-2
@@ -149,7 +149,7 @@ jobs:
         run: docker exec -t imagine-${{ matrix.php-version }} php --ri exif
       -
         name: Cleanup
-        run: docker exec -t imagine-${{ matrix.php-version }} /installer.sh cleanup
+        run: docker exec -t imagine-${{ matrix.php-version }} imagine-install cleanup
       -
         name: Check container
         run:  docker container ls -s --filter name=imagine-${{ matrix.php-version }}
@@ -251,7 +251,7 @@ jobs:
       -
         name: Install GraphicsMagic
         if: ${{ contains(format('-{0}-', matrix.extensions), '-gmagick-') }}
-        run: docker exec -t imagine-${{ matrix.config.php-version }}-${{ matrix.extensions }} /installer.sh graphicsmagick ${{ matrix.config.graphicsmagic-version }}
+        run: docker exec -t imagine-${{ matrix.config.php-version }}-${{ matrix.extensions }} imagine-install graphicsmagick ${{ matrix.config.graphicsmagic-version }}
       -
         name: Install gmagick PHP extension
         if: ${{ contains(format('-{0}-', matrix.extensions), '-gmagick-') }}
@@ -263,7 +263,7 @@ jobs:
       -
         name: Install ImageMagick
         if: ${{ contains(format('-{0}-', matrix.extensions), '-imagick-') }}
-        run: docker exec -t imagine-${{ matrix.config.php-version }}-${{ matrix.extensions }} /installer.sh imagemagick ${{ matrix.config.imagemagick-version }}
+        run: docker exec -t imagine-${{ matrix.config.php-version }}-${{ matrix.extensions }} imagine-install imagemagick ${{ matrix.config.imagemagick-version }}
       -
         name: Install imagick PHP extension
         if: ${{ contains(format('-{0}-', matrix.extensions), '-imagick-') }}
@@ -281,8 +281,8 @@ jobs:
         if: ${{ contains(format('-{0}-', matrix.extensions), '-gd-') }}
         run: docker exec -t imagine-${{ matrix.config.php-version }}-${{ matrix.extensions }} php --ri gd
       -
-        name: Final cleanup
-        run: docker exec -t imagine-${{ matrix.config.php-version }}-${{ matrix.extensions }} /installer.sh final-cleanup
+        name: Cleanup
+        run: docker exec -t imagine-${{ matrix.config.php-version }}-${{ matrix.extensions }} imagine-install cleanup
       -
         name: Check container
         run:  docker container ls -s --filter name=imagine-${{ matrix.config.php-version }}-${{ matrix.extensions }}
