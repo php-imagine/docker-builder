@@ -31,7 +31,7 @@ jobs:
             echo 'Docker images will be published'
             PUBLISH_IMAGES=yes
           fi
-          echo "::set-output name=result::$PUBLISH_IMAGES"
+          echo "result=$PUBLISH_IMAGES" >> $GITHUB_OUTPUT
 
   build-base-images:
     name: PHP ${{ matrix.php-version }}
@@ -52,6 +52,7 @@ jobs:
       # The version of libheif to be installed - see # https://github.com/strukturag/libheif/releases
       LIBHEIF_VERSION: 1.12.0
     strategy:
+      fail-fast: false
       matrix:
         php-version:
           - "5.5"
@@ -63,15 +64,18 @@ jobs:
           - "7.4"
           - "8.0"
           - "8.1"
+          - "8.2"
+          - "8.3"
+          - "8.4"
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       -
         name: Create initial image
         run: |
           PHP_VERSION_DOCKERSUFFIX=''
-          if [ "${{ matrix.php-version }}" = '8.1' ]; then
+          if [ "${{ matrix.php-version }}" = '8.4' ]; then
             PHP_VERSION_DOCKERSUFFIX='-rc'
           fi
           docker build \
@@ -112,8 +116,8 @@ jobs:
           else
             HEIC_SUPPORT=no
           fi
-          echo "::set-output name=avif-support::$AVIF_SUPPORT"
-          echo "::set-output name=heic-support::$HEIC_SUPPORT"
+          echo "avif-support=$AVIF_SUPPORT" >> $GITHUB_OUTPUT
+          echo "heic-support=$HEIC_SUPPORT" >> $GITHUB_OUTPUT
       -
         name: Install git
         run: docker exec -t imagine-${{ matrix.php-version }} imagine-install git $GIT_VERSION
@@ -172,7 +176,7 @@ jobs:
       -
         name: Upload image
         if: needs.inspect.outputs.publish == 'no'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: base-image-${{ matrix.php-version }}
           path: /tmp/base-image-${{ matrix.php-version }}.tgz
@@ -225,6 +229,15 @@ jobs:
             graphicsmagic-version: "1.3.36"
             imagemagick-version: "7.1.0-8"
           - php-version: "8.1"
+            graphicsmagic-version: "1.3.36"
+            imagemagick-version: "7.1.0-8"
+          - php-version: "8.2"
+            graphicsmagic-version: "1.3.36"
+            imagemagick-version: "7.1.0-8"
+          - php-version: "8.3"
+            graphicsmagic-version: "1.3.36"
+            imagemagick-version: "7.1.0-8"
+          - php-version: "8.4"
             graphicsmagic-version: "1.3.36"
             imagemagick-version: "7.1.0-8"
         extensions:
