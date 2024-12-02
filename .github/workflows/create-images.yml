@@ -92,6 +92,12 @@ jobs:
         name: Start container
         run: docker start imagine-${{ matrix.php-version }}
       -
+        name: Temp
+        run: docker exec -t imagine-${{ matrix.php-version }} ls -al /usr/local/bin/
+      -
+        name: Fix apt
+        run: docker exec -t imagine-${{ matrix.php-version }} imagine-fix-apt
+      -
         name: Update apt cache
         run: docker exec -t imagine-${{ matrix.php-version }} apt-get update -q
       -
