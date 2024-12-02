@@ -2,7 +2,7 @@
 ARG PHP_VERSION
 
 # The suffix of the Docker image to be appended to PHP_VERSION
-# Example: "-rc" for php:8.1-rc-cli
+# Example: "-rc" for php:8.5-rc-cli
 ARG PHP_VERSION_DOCKERSUFFIX=""
 
 FROM php:${PHP_VERSION}${PHP_VERSION_DOCKERSUFFIX}-cli

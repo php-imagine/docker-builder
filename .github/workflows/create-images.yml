@@ -75,7 +75,7 @@ jobs:
         name: Create initial image
         run: |
           PHP_VERSION_DOCKERSUFFIX=''
-          if [ "${{ matrix.php-version }}" = '8.4' ]; then
+          if [ "${{ matrix.php-version }}" = '8.5' ]; then
             PHP_VERSION_DOCKERSUFFIX='-rc'
           fi
           docker build \
