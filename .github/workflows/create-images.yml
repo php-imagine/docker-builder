@@ -189,7 +189,7 @@ jobs:
       -
         name: Login to the container registry
         if: needs.inspect.outputs.publish == 'yes'
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -252,11 +252,11 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       -
         name: Download base image
         if: needs.inspect.outputs.publish == 'no'
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: base-image-${{ matrix.config.php-version }}
           path: /tmp/
@@ -320,7 +320,7 @@ jobs:
       -
         name: Login to the container registry
         if: needs.inspect.outputs.publish == 'yes'
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
